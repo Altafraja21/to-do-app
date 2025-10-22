@@ -39,6 +39,35 @@ app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
     
     console.log('Login attempt received:', { email, password: '***' });
+
+
+    // Add this temporary register route too
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    console.log('Registration attempt:', { name, email, password: '***' });
+    
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully (test mode)',
+      token: 'test-jwt-token-12345',
+      user: {
+        id: '1',
+        name: name,
+        email: email
+      }
+    });
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during registration'
+    });
+  }
+});
+
     
     // Simple test response - remove this later
     res.json({
