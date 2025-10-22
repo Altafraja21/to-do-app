@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const res = await API.get('/auth/me');
+        const res = await API.get('/auth/me'); // Now becomes /api/auth/me
         setUser(res.data.user);
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -35,22 +35,30 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await API.post('/auth/login', { email, password });
+      console.log('Attempting login...');
+      const res = await API.post('/auth/login', { email, password }); // Now becomes /api/auth/login
+      console.log('Login response:', res.data);
+      
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
       return res.data;
     } catch (error) {
+      console.error('Login error:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const register = async (name, email, password) => {
     try {
-      const res = await API.post('/auth/register', { name, email, password });
+      console.log('Attempting registration...');
+      const res = await API.post('/auth/register', { name, email, password }); // Now becomes /api/auth/register
+      console.log('Registration response:', res.data);
+      
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
       return res.data;
     } catch (error) {
+      console.error('Registration error:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Registration failed');
     }
   };
