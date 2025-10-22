@@ -1,16 +1,15 @@
+// models/Todo.js
 const mongoose = require('mongoose');
 
 const todoSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please add a todo title'],
-    trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
+    required: true,
+    trim: true
   },
   description: {
     type: String,
-    trim: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    trim: true
   },
   completed: {
     type: Boolean,
@@ -23,7 +22,7 @@ const todoSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    trim: true,
+    enum: ['work', 'personal', 'shopping', 'health', 'education', 'general'],
     default: 'general'
   },
   tags: [{
@@ -36,11 +35,17 @@ const todoSchema = new mongoose.Schema({
   reminder: {
     type: Date
   },
-  remindersSent: {
-    type: [String],
-    default: []
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  // Sharing fields
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  // SHARING FIELDS - ADD THESE
   isShared: {
     type: Boolean,
     default: false
@@ -48,7 +53,8 @@ const todoSchema = new mongoose.Schema({
   sharedWith: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
+      required: true
     },
     permission: {
       type: String,
@@ -59,27 +65,13 @@ const todoSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }],
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: false
-  },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }
+  }]
 }, {
   timestamps: true
 });
 
-// Create index for better query performance
+// Index for better performance
 todoSchema.index({ user: 1, createdAt: -1 });
-todoSchema.index({ user: 1, category: 1 });
-todoSchema.index({ user: 1, tags: 1 });
-todoSchema.index({ reminder: 1 });
-todoSchema.index({ dueDate: 1 });
 todoSchema.index({ 'sharedWith.user': 1 });
 todoSchema.index({ createdBy: 1 });
 

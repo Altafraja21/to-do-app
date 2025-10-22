@@ -1,5 +1,6 @@
+// context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import API from '../utils/api';
+import API from '../utils/api'; // Make sure this path is correct
 
 const AuthContext = createContext();
 
@@ -23,11 +24,12 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const res = await API.get('/auth/me'); // Now becomes /api/auth/me
+        const res = await API.get('/auth/me');
         setUser(res.data.user);
       } catch (error) {
         console.error('Auth check failed:', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
     }
     setLoading(false);
@@ -35,36 +37,35 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      console.log('Attempting login...');
-      const res = await API.post('/auth/login', { email, password }); // Now becomes /api/auth/login
-      console.log('Login response:', res.data);
+      console.log('Sending login request to API...');
+      const res = await API.post('/auth/login', { email, password });
       
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
       return res.data;
     } catch (error) {
-      console.error('Login error:', error.response?.data);
+      console.error('Login API error:', error);
       throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const register = async (name, email, password) => {
     try {
-      console.log('Attempting registration...');
-      const res = await API.post('/auth/register', { name, email, password }); // Now becomes /api/auth/register
-      console.log('Registration response:', res.data);
+      const res = await API.post('/auth/register', { name, email, password });
       
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
       return res.data;
     } catch (error) {
-      console.error('Registration error:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Registration failed');
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Create axios instance with base URL
 const API = axios.create({
-  baseURL: 'https://to-do-app-server-mwyz.onrender.com/api', // Add /api here
+  baseURL: 'https://to-do-app-server-mwyz.onrender.com/api', // Your BACK-END URL
   timeout: 10000,
 });
 
@@ -23,6 +22,7 @@ API.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

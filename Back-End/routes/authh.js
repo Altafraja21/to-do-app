@@ -1,15 +1,8 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const auth = require('../middleware/auth');
 const router = express.Router();
-
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { 
-    expiresIn: process.env.JWT_EXPIRE || '30d' 
-  });
-};
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -18,39 +11,34 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide name, email and password'
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters'
-      });
-    }
-
     // Check if user exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
+    let user = await User.findOne({ email });
+    if (user) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email'
+        message: 'User already exists'
       });
     }
 
-    // Create user
-    const user = await User.create({
+    // Create new user
+    user = new User({
       name,
       email,
       password
     });
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    await user.save();
+
+    // Create token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
 
     res.status(201).json({
       success: true,
@@ -63,15 +51,6 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(val => val.message);
-      return res.status(400).json({
-        success: false,
-        message: messages.join(', ')
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
@@ -86,26 +65,36 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email & password
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide email and password'
-      });
-    }
+    console.log('Login attempt for:', email);
 
-    // Check for user (include password for verification)
-    const user = await User.findOne({ email }).select('+password');
-    
-    if (!user || !(await user.correctPassword(password))) {
-      return res.status(401).json({
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log('Password mismatch for:', email);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Create token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    console.log('Login successful for:', email);
 
     res.json({
       success: true,
@@ -128,10 +117,28 @@ router.post('/login', async (req, res) => {
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-router.get('/me', auth, async (req, res) => {
+router.get('/me', async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    // This would need auth middleware
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token is not valid'
+      });
+    }
+
     res.json({
       success: true,
       user: {
