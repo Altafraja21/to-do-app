@@ -14,6 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+
 // CORS middleware
 app.use(cors({
   origin: [
@@ -26,6 +27,51 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+
+
+
+
+
+// Add this temporary route to your Server.js - put it before your other routes
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Login attempt received:', { email, password: '***' });
+    
+    // Simple test response - remove this later
+    res.json({
+      success: true,
+      message: 'Login successful (test mode)',
+      token: 'test-jwt-token-12345',
+      user: {
+        id: '1',
+        name: 'Test User',
+        email: email
+      }
+    });
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during login'
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
 // Basic route for testing
 app.get('/api/health', (req, res) => {
   res.json({ 
