@@ -87,7 +87,7 @@ const connectDB = async () => {
     console.log('✅ MongoDB Connected');
     
     // Start server only after DB connection
-    const server = app.listen(PORT, 'localhost', () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
       console.log(`📍 Frontend: http://localhost:5173`);
