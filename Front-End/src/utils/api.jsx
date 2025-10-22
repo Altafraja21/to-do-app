@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://to-do-app-server-mwyz.onrender.com',
   timeout: 10000, // 10 second timeout
 });
 
