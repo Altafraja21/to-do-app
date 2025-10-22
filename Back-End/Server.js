@@ -16,12 +16,16 @@ app.use(express.urlencoded({ extended: false }));
 
 // CORS middleware
 app.use(cors({
-  origin: ['https://to-do-app-hbzk.onrender.com/', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  origin: [
+    'https://to-do-app-hbzk.onrender.com', // Remove trailing slash
+    'http://localhost:3000', 
+    'http://127.0.0.1:5173',
+    'http://localhost:5173' // Add Vite default port
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 // Basic route for testing
 app.get('/api/health', (req, res) => {
   res.json({ 
