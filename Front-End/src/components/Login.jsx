@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import '../App.css';
 
 const Login = () => {
@@ -13,7 +12,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
-  const { isDarkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -49,15 +47,6 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      {/* Theme Toggle Button */}
-      <button 
-        className="theme-toggle"
-        onClick={toggleDarkMode}
-        title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        {isDarkMode ? '☀️' : '🌙'}
-      </button>
-
       <div className="auth-card">
         <h2 className="auth-title">Welcome Back</h2>
         <form onSubmit={handleSubmit}>
