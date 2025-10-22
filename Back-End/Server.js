@@ -83,7 +83,7 @@ const PORT = process.env.PORT || 5000;
 // Database connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mern-todo');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://altafrajavines_db_user:X88rbXzEVrk4OEo6@cluster0.lv1rwea.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
     console.log('✅ MongoDB Connected');
     
     // Start server only after DB connection
