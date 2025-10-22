@@ -7,7 +7,7 @@ require('dotenv').config();
 const auth = require('./routes/authh');
 const todos = require('./routes/todos');
 const reminders = require('./routes/reminders');
-const sharing = require('./routes/sharing'); // ADD THIS
+const sharing = require('./routes/sharing');
 
 const app = express();
 
@@ -27,61 +27,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// Temporary login route (FIXED - not nested)
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    console.log('Login attempt received:', { email, password: '***' });
-    
-    // Simple test response - remove this later
-    res.json({
-      success: true,
-      message: 'Login successful (test mode)',
-      token: 'test-jwt-token-12345',
-      user: {
-        id: '1',
-        name: 'Test User',
-        email: email
-      }
-    });
-    
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during login'
-    });
-  }
-});
-
-// Temporary register route (FIXED - separate from login)
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    
-    console.log('Registration attempt:', { name, email, password: '***' });
-    
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully (test mode)',
-      token: 'test-jwt-token-12345',
-      user: {
-        id: '1',
-        name: name,
-        email: email
-      }
-    });
-    
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during registration'
-    });
-  }
-});
 
 // Basic route for testing
 app.get('/api/health', (req, res) => {
@@ -122,11 +67,29 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Mount routers (comment out auth while using temporary routes)
-// app.use('/api/auth', auth);
+// Debug route to check users (temporary - remove later)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const users = await User.find().select('name email createdAt');
+    res.json({
+      success: true,
+      count: users.length,
+      users: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Mount routers (NOW USING REAL AUTH ROUTES)
+app.use('/api/auth', auth);
 app.use('/api/todos', todos);
 app.use('/api/reminders', reminders);
-app.use('/api/sharing', sharing); // ADD THIS LINE
+app.use('/api/sharing', sharing);
 
 // Handle undefined routes
 app.use((req, res) => {
@@ -158,6 +121,7 @@ const connectDB = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
       console.log(`📍 Frontend: http://localhost:5173`);
+      console.log(`📍 Using REAL authentication routes`);
     });
 
     // Handle server errors

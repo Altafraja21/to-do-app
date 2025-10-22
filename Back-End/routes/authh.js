@@ -11,12 +11,14 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    console.log('Registration attempt:', { name, email });
+
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists'
+        message: 'User already exists with this email'
       });
     }
 
@@ -27,10 +29,7 @@ router.post('/register', async (req, res) => {
       password
     });
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
+    // Hash password (this will be done by the pre-save hook)
     await user.save();
 
     // Create token
@@ -40,8 +39,11 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    console.log('Registration successful for:', email);
+
     res.status(201).json({
       success: true,
+      message: 'User registered successfully',
       token,
       user: {
         id: user._id,
@@ -49,8 +51,25 @@ router.post('/register', async (req, res) => {
         email: user.email
       }
     });
+
   } catch (error) {
     console.error('Register error:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists with this email'
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
@@ -67,23 +86,23 @@ router.post('/login', async (req, res) => {
 
     console.log('Login attempt for:', email);
 
-    // Find user
+    // Find user - password is now included by default
     const user = await User.findOne({ email });
     if (!user) {
       console.log('User not found:', email);
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    // Check password using the model method
+    const isPasswordValid = await user.correctPassword(password);
+    if (!isPasswordValid) {
       console.log('Password mismatch for:', email);
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
@@ -98,6 +117,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       success: true,
+      message: 'Login successful',
       token,
       user: {
         id: user._id,
@@ -105,11 +125,12 @@ router.post('/login', async (req, res) => {
         email: user.email
       }
     });
+
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: 'Server error during login: ' + error.message
     });
   }
 });
@@ -119,7 +140,6 @@ router.post('/login', async (req, res) => {
 // @access  Private
 router.get('/me', async (req, res) => {
   try {
-    // This would need auth middleware
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -130,12 +150,12 @@ router.get('/me', async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id);
     
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Token is not valid'
+        message: 'Invalid token'
       });
     }
 
@@ -147,11 +167,12 @@ router.get('/me', async (req, res) => {
         email: user.email
       }
     });
+
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(500).json({
+    res.status(401).json({
       success: false,
-      message: 'Server error'
+      message: 'Invalid token'
     });
   }
 });

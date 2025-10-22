@@ -21,8 +21,8 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please add a password'],
-    minlength: 6,
-    select: false
+    minlength: 6
+    // REMOVED: select: false (this was causing login issues)
   },
   avatar: {
     type: String,
@@ -49,6 +49,13 @@ UserSchema.pre('save', async function(next) {
 // Match user entered password to hashed password in database
 UserSchema.methods.correctPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Remove password when converting to JSON
+UserSchema.methods.toJSON = function() {
+  const user = this.toObject();
+  delete user.password;
+  return user;
 };
 
 module.exports = mongoose.model('User', UserSchema);
